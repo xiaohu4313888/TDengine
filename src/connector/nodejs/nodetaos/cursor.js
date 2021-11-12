@@ -30,6 +30,7 @@ function TDengineCursor(connection = null) {
   this._fields = null;
   this.data = [];
   this.fields = null;
+  this._stmt = null;
   if (connection != null) {
     this._connection = connection
     this._chandle = connection._chandle //pass through, just need library loaded.
@@ -211,7 +212,7 @@ TDengineCursor.prototype.fetchall = function fetchall(options, callback) {
     }
 
   }
-  
+
   performance.mark('B');
   performance.measure('query', 'A', 'B');
   let response = this._createSetResponse(this._rowcount, time)
@@ -473,4 +474,105 @@ TDengineCursor.prototype.openStream = function openStream(sql, callback, stime =
  */
 TDengineCursor.prototype.closeStream = function closeStream(stream) {
   this._chandle.closeStream(stream);
+}
+
+/**
+ * init a TAOS_STMT object for later use.it should be freed with stmtClose.
+ * @returns  Not NULL returned for success, and NULL for failure. 
+ * 
+ */
+TDengineCursor.prototype.stmtInit = function stmtInit() {
+  let res = null
+  res = this._chandle.stmtInit(this._connection._conn);
+  if (res == null) {
+    throw "init stmt failed"
+  } else {
+    //console.log(ref.getType(res))
+    this._stmt = res;
+  }
+
+}
+/**
+ * prepare a sql statement,'sql' should be a valid INSERT/SELECT statement
+ * @param {*} stmt 
+ * @param {string} sql  a valid INSERT/SELECT statement
+ * @returns {int}	0 for success, non-zero for failure.
+ */
+TDengineCursor.prototype.stmtPrepare = function stmtPrepare(sql) {
+  let res = -1;
+  if (this._stmt == null) {
+    throw "stmt is null"
+    return;
+  } else {
+    res = this._chandle.stmtPrepare(this._stmt, sql, null);
+    if (res != 0) {
+      throw "stmt prepare failed"
+    } else {
+      return res;
+    }
+  }
+
+}
+/**
+ * bind a whole line data, for both INSERT and SELECT. The parameter 'bind' points to an array 
+ * contains the whole line data. Each item in array represents a column's value, the item 
+ * number and sequence should keep consistence with columns in sql statement. The usage of 
+ * structure TAOS_BIND is the same with MYSQL_BIND in MySQL.
+ * @param {*} stmt 
+ * @param {*} binds points to an array contains the whole line data.
+ * @returns 	0 for success, non-zero for failure.
+ */
+TDengineCursor.prototype.bindParam = function bindParam(binds) {
+  // console.log("TDengineCursor.prototype.bindParam address:"+ref.address(binds));
+  // console.log("TDengineCursor.prototype.bindParam ref address:"+ref.address(binds.ref()));
+  this._chandle.bindParam(this._stmt, binds);
+}
+/**
+ * add all current bound parameters to batch process, for INSERT only.
+ * Must be called after each call to bindParam/bindSingleParamBatch, 
+ * or all columns binds for one or more lines with bindSingleParamBatch. User 
+ * application can call any bind parameter API again to bind more data lines after calling
+ * to this API.
+ * @param {*} stmt 
+ * @returns 	0 for success, non-zero for failure.
+ */
+TDengineCursor.prototype.addBatch = function addBatch() {
+  this._chandle.addBatch(this._stmt)
+}
+/**
+ * actually execute the INSERT/SELECT sql statement. User application can continue
+ * to bind new data after calling to this API.
+ * @param {*} stmt 
+ * @returns 	0 for success, non-zero for failure.
+ */
+TDengineCursor.prototype.stmtExecute = function stmtExecute() {
+  if(!this.isEmptyStmt()){
+    this._chandle.stmtExecute(this._stmt);
+  }else{
+    throw "stmt is null"
+  }
+}
+
+/**
+ * close STMT object and free resources.
+ * @param {*} stmt 
+ * @returns 0 for success, non-zero for failure.
+ */
+TDengineCursor.prototype.closeStmt = function closeStmt() {
+  let res = -1;
+  res = this._chandle.closeStmt(this._stmt);
+  if (res != 0) {
+    throw "stmt close  failed"
+  } else {
+    console.log("stmt is closed");
+  }
+
+}
+
+TDengineCursor.prototype.isEmptyStmt = function isEmptyStmt(){
+  if(this._stmt == null){
+    return true;
+  }else{
+    return false;
+  }
 }

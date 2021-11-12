@@ -25,57 +25,58 @@
  * @property {number} C_TIMESTAMP_MICRO - The code for microsecond timestamps, as returned by libtaos.taos_result_precision(result).
  */
 module.exports = {
-    C_NULL : 0,
-    C_BOOL : 1,
-    C_TINYINT : 2,
-    C_SMALLINT : 3,
-    C_INT : 4,
-    C_BIGINT : 5,
-    C_FLOAT : 6,
-    C_DOUBLE : 7,
-    C_BINARY : 8,
-    C_TIMESTAMP : 9,
-    C_NCHAR : 10,
-    C_TINYINT_UNSIGNED : 11,
-    C_SMALLINT_UNSIGNED : 12,
-    C_INT_UNSIGNED : 13,
-    C_BIGINT_UNSIGNED : 14,
-    // NULL value definition
-    // NOTE: These values should change according to C definition in tsdb.h
-    C_BOOL_NULL : 2,
-    C_TINYINT_NULL : -128,
-    C_TINYINT_UNSIGNED_NULL : 255,
-    C_SMALLINT_NULL : -32768,
-    C_SMALLINT_UNSIGNED_NULL : 65535,
-    C_INT_NULL : -2147483648,
-    C_INT_UNSIGNED_NULL : 4294967295,
-    C_BIGINT_NULL : -9223372036854775808n,
-    C_BIGINT_UNSIGNED_NULL : 18446744073709551615n,
-    C_FLOAT_NULL : 2146435072,
-    C_DOUBLE_NULL : -9223370937343148032,
-    C_NCHAR_NULL : 4294967295,
-    C_BINARY_NULL : 255,
-    C_TIMESTAMP_MILLI : 0,
-    C_TIMESTAMP_MICRO : 1,
-    getType,
+  C_NULL: 0,
+  C_BOOL: 1,
+  C_TINYINT: 2,
+  C_SMALLINT: 3,
+  C_INT: 4,
+  C_BIGINT: 5,
+  C_FLOAT: 6,
+  C_DOUBLE: 7,
+  C_BINARY: 8,
+  C_TIMESTAMP: 9,
+  C_NCHAR: 10,
+  C_TINYINT_UNSIGNED: 11,
+  C_SMALLINT_UNSIGNED: 12,
+  C_INT_UNSIGNED: 13,
+  C_BIGINT_UNSIGNED: 14,
+  // NULL value definition
+  // NOTE: These values should change according to C definition in tsdb.h
+  C_BOOL_NULL: 2,
+  C_TINYINT_NULL: -128,
+  C_TINYINT_UNSIGNED_NULL: 255,
+  C_SMALLINT_NULL: -32768,
+  C_SMALLINT_UNSIGNED_NULL: 65535,
+  C_INT_NULL: -2147483648,
+  C_INT_UNSIGNED_NULL: 4294967295,
+  C_BIGINT_NULL: -9223372036854775808n,
+  C_BIGINT_UNSIGNED_NULL: 18446744073709551615n,
+  C_FLOAT_NULL: 2146435072,
+  C_DOUBLE_NULL: -9223370937343148032,
+  C_NCHAR_NULL: 4294967295,
+  C_BINARY_NULL: 255,
+  C_TIMESTAMP_MILLI: 0,
+  C_TIMESTAMP_MICRO: 1,
+  getType,
+  getTypeCode,
 }
 
 const typeCodesToName = {
-  0 : 'Null',
-  1 : 'Boolean',
-  2 : 'Tiny Int',
-  3 : 'Small Int',
-  4 : 'Int',
-  5 : 'Big Int',
-  6 : 'Float',
-  7 : 'Double',
-  8 : 'Binary',
-  9 : 'Timestamp',
-  10 : 'Nchar',
-  11 : 'TINYINT_UNSIGNED',
-  12 : 'SMALLINT_UNSIGNED',
-  13 : 'INT_UNSIGNED',
-  14 : 'BIGINT_UNSIGNED',
+  0: 'Null',
+  1: 'Boolean',
+  2: 'Tiny Int',
+  3: 'Small Int',
+  4: 'Int',
+  5: 'Big Int',
+  6: 'Float',
+  7: 'Double',
+  8: 'Binary',
+  9: 'Timestamp',
+  10: 'Nchar',
+  11: 'TINYINT_UNSIGNED',
+  12: 'SMALLINT_UNSIGNED',
+  13: 'INT_UNSIGNED',
+  14: 'BIGINT_UNSIGNED',
 }
 
 /**
@@ -85,4 +86,31 @@ const typeCodesToName = {
  */
 function getType(typecode) {
   return typeCodesToName[typecode];
+}
+
+const typeNameToTypeCode = {
+
+  'NULL': 0,
+  'BOOLEAN': 1,
+  'TINY_INT': 2,
+  'SMALL_INT': 3,
+  'INT': 4,
+  'BIG_INT': 5,
+  'FLOAT': 6,
+  'DOUBLE': 7,
+  'BINARY': 8,
+  'TIMESTAMP': 9,
+  'NCHAR': 10,
+  'TINYINT_UNSIGNED': 11,
+  'SMALLINT_UNSIGNED': 12,
+  'INT_UNSIGNED': 13,
+  'BIGINT_UNSIGNED': 14,
+}
+/**
+ * return taos data type code,with the input type
+ * @param {string} typeName 
+ * @returns 
+ */
+function getTypeCode(typeName){
+  return typeNameToTypeCode[typeName];
 }

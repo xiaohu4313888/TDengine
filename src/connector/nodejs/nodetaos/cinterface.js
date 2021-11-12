@@ -11,8 +11,7 @@ const Struct = require('ref-struct-napi');
 const FieldTypes = require('./constants');
 const errors = require('./error');
 const TaosObjects = require('./taosobjects');
-const { NULL_POINTER } = require('ref-napi');
-const { Console } = require('console');
+
 
 module.exports = CTaosInterface;
 
@@ -223,6 +222,61 @@ TaosField.fields.name.type.size = 65;
 TaosField.defineProperty('type', ref.types.char);
 TaosField.defineProperty('bytes', ref.types.short);
 
+//define stmt taos_bind struct 
+//void * ref.refType(ref.types.void)
+
+var TAOS_BIND = Struct();
+TAOS_BIND.defineProperty('buffer_type', ref.types.int);
+TAOS_BIND.defineProperty('buffer', ref.refType(ref.types.void));
+TAOS_BIND.defineProperty('buffer_length', ref.types.ulong);
+TAOS_BIND.defineProperty('length', ref.refType(ref.types.ulong));
+TAOS_BIND.defineProperty('is_null', ref.refType(ref.types.int));
+TAOS_BIND.defineProperty('is_unsigned', ref.types.int);
+TAOS_BIND.defineProperty('error', ref.refType(ref.types.int));
+/**
+ * typedef struct TAOS_BIND {        // one line data for one column
+   int buffer_type;               // column type
+   void * buffer;                 // one column value
+   unsigned long buffer_length;   // unused
+   unsigned long *length;         // actual value length in buffer
+   int * is_null;                 // indicates the column value is null or not
+   int is_unsigned;               // unused
+   int * error;                   // unused
+   union {
+    int64_t        ts;
+    int8_t         b;
+    int8_t         v1;
+    int16_t        v2;
+    int32_t        v4;
+    int64_t        v8;
+    float          f4;
+    double         f8;
+    unsigned char *bin;
+    char          *nchar;
+  } u;
+  unsigned int     allocated;
+} TAOS_BIND;
+ */
+var TAOS_MULTI_BIND = Struct();
+TAOS_MULTI_BIND.defineProperty('buffer_type', ref.types.int);
+TAOS_MULTI_BIND.defineProperty('buffer', ref.refType(ref.types.void));
+TAOS_MULTI_BIND.defineProperty('buffer_length', ref.refType(ref.types.void));
+TAOS_MULTI_BIND.defineProperty('length', ref.refType(ref.types.int));
+TAOS_MULTI_BIND.defineProperty('is_null', ref.refType(ref.types.char));
+TAOS_MULTI_BIND.defineProperty('num', ref.types.int);
+
+/**
+ *  
+ * typedef struct TAOS_MULTI_BIND {  // one or more lines data for one column
+  int buffer_type;               // column type
+  void * buffer;                 // array, one or more lines column value 
+  uintptr_t buffer_length;       // one column value's buffer size, the total buffer size should be buffer_length*num
+  int * length;                  // array, actual data length for each value
+  char * is_null;                // array, indicates each column value is null or not
+  int num;                       // line number, or the values number in buffer 
+} TAOS_MULTI_BIND;
+
+ */
 
 /**
  *
@@ -305,7 +359,46 @@ function CTaosInterface(config = null, pass = false) {
     //void taos_close_stream(TAOS_STREAM *tstr);
     'taos_close_stream': [ref.types.void, [ref.types.void_ptr]]
 
+    //stmt APIs
+    // TAOS_STMT* taos_stmt_init(TAOS *taos)
+    , 'taos_stmt_init': [ref.types.void_ptr, [ref.types.void_ptr]]
+
+    // int taos_stmt_prepare(TAOS_STMT *stmt, const char *sql, unsigned long length)
+    , 'taos_stmt_prepare': [ref.types.int, [ref.types.void_ptr, ref.types.char_ptr, ref.types.ulong]]
+
+    // int taos_stmt_set_tbname(TAOS_STMT* stmt, const char* name)
+    , 'taos_stmt_set_tbname': [ref.types.int, [ref.types.void_ptr, ref.types.char_ptr]]
+
+    // int taos_stmt_set_tbname_tags(TAOS_STMT* stmt, const char* name, TAOS_BIND* tags)
+    , 'taos_stmt_set_tbname_tags': [ref.types.int, [ref.types.void_ptr, ref.types.char_ptr, ref.refType(TAOS_BIND)]]
+
+    // int taos_stmt_set_sub_tbname(TAOS_STMT* stmt, const char* name)
+    , 'taos_stmt_set_sub_tbname': [ref.types.int, [ref.types.void_ptr, ref.types.char_ptr]]
+
+    // int taos_stmt_bind_param(TAOS_STMT *stmt, TAOS_BIND *bind)
+    , 'taos_stmt_bind_param': [ref.types.int, [ref.types.void_ptr, ref.refType(TAOS_BIND)]]
+
+    // int taos_stmt_bind_single_param_batch(TAOS_STMT* stmt, TAOS_MULTI_BIND* bind, int colIdx)  
+    , 'taos_stmt_bind_single_param_batch': [ref.types.int, [ref.types.void_ptr, ref.refType(TAOS_MULTI_BIND), ref.types.int]]
+    // int taos_stmt_bind_param_batch(TAOS_STMT* stmt, TAOS_MULTI_BIND* bind) 
+    , 'taos_stmt_bind_param_batch': [ref.types.int, [ref.types.void_ptr, ref.refType(TAOS_MULTI_BIND)]]
+
+    // int taos_stmt_add_batch(TAOS_STMT *stmt)
+    , 'taos_stmt_add_batch': [ref.types.int, [ref.types.void_ptr]]
+
+    // int taos_stmt_execute(TAOS_STMT *stmt) 
+    , 'taos_stmt_execute': [ref.types.int, [ref.types.void_ptr]]
+
+    // TAOS_RES* taos_stmt_use_result(TAOS_STMT *stmt)  
+    , 'taos_stmt_use_result': [ref.types.int, [ref.types.void_ptr]]
+
+    // int taos_stmt_close(TAOS_STMT *stmt) 
+    , 'taos_stmt_close': [ref.types.int, [ref.types.void_ptr]]
+
+    // char * taos_stmt_errstr(TAOS_STMT *stmt)
+    , 'taos_stmt_close': [ref.types.char_ptr, [ref.types.void_ptr]]
   });
+
   if (pass == false) {
     if (config == null) {
       this._config = ref.alloc(ref.types.char_ptr, ref.NULL);
@@ -582,7 +675,7 @@ CTaosInterface.prototype.subscribe = function subscribe(connection, restart, top
   }
   return subscription;
 }
-
+// consume
 CTaosInterface.prototype.consume = function consume(subscription) {
   let result = this.libtaos.taos_consume(subscription);
   let fields = [];
@@ -663,4 +756,77 @@ CTaosInterface.prototype.openStream = function openStream(connection, sql, callb
 CTaosInterface.prototype.closeStream = function closeStream(stream) {
   this.libtaos.taos_close_stream(stream);
   console.log("Closed stream");
+}
+
+//stmt APIs
+
+/**
+ * init a TAOS_STMT object for later use.it should be freed with stmtClose.
+ * @param {*} connection valid taos connection 
+ * @returns  Not NULL returned for success, and NULL for failure. 
+ * 
+ */
+CTaosInterface.prototype.stmtInit = function stmtInit(connection) {
+  return this.libtaos.taos_stmt_init(connection)
+}
+
+/**
+ * prepare a sql statement,'sql' should be a valid INSERT/SELECT statement, 'length' is not used.
+ * @param {*} stmt 
+ * @param {string} sql  a valid INSERT/SELECT statement
+ * @param {ulong} length not used
+ * @returns 	0 for success, non-zero for failure.
+ */
+CTaosInterface.prototype.stmtPrepare = function stmtPrepare(stmt, sql, length) {
+  // let leng = ref.alloc(ref.types.ulong, ref.NULL);
+  return this.libtaos.taos_stmt_prepare(stmt, ref.allocCString(sql), 0);
+}
+
+/**
+ * bind a whole line data, for both INSERT and SELECT. The parameter 'bind' points to an array 
+ * contains the whole line data. Each item in array represents a column's value, the item 
+ * number and sequence should keep consistence with columns in sql statement. The usage of 
+ * structure TAOS_BIND is the same with MYSQL_BIND in MySQL.
+ * @param {*} stmt 
+ * @param {*} binds points to an array contains the whole line data.
+ * @returns 	0 for success, non-zero for failure.
+ */
+CTaosInterface.prototype.bindParam = function bindParam(stmt, binds) {
+  
+  // console.log("CTaosInterface.prototype.bindParam address:"+ref.address(binds));
+  // console.log("CTaosInterface.prototype.bindParam address:" ,typeof binds);
+  // console.log("CTaosInterface.prototype.bindParam address:" ,bindsBuff.Buffer);
+  // console.log("CTaosInterface.prototype.bindParam ref address:"+ref.address(binds.ref()));
+  return this.libtaos.taos_stmt_bind_param(stmt, binds.ref());
+}
+
+/**
+ * add all current bound parameters to batch process, for INSERT only.
+ * Must be called after each call to bindParam/bindSingleParamBatch, 
+ * or all columns binds for one or more lines with bindSingleParamBatch. User 
+ * application can call any bind parameter API again to bind more data lines after calling
+ * to this API.
+ * @param {*} stmt 
+ * @returns 	0 for success, non-zero for failure.
+ */
+CTaosInterface.prototype.addBatch = function addBatch(stmt) {
+  return this.libtaos.taos_stmt_add_batch(stmt);
+}
+/**
+ * actually execute the INSERT/SELECT sql statement. User application can continue
+ * to bind new data after calling to this API.
+ * @param {*} stmt 
+ * @returns 	0 for success, non-zero for failure.
+ */
+CTaosInterface.prototype.stmtExecute = function stmtExecute(stmt) {
+  return this.libtaos.taos_stmt_execute(stmt);
+}
+
+/**
+ * 	close STMT object and free resources.
+ * @param {*} stmt 
+ * @returns 0 for success, non-zero for failure.
+ */
+CTaosInterface.prototype.closeStmt = function closeStmt(stmt) {
+  return this.libtaos.taos_stmt_close(stmt);
 }
