@@ -30,6 +30,8 @@
 
 #ifdef _TD_PRO_
     #define HISTORY_FILE           ".prodb_history"
+#elif (_TD_KH_ == true)
+    #define HISTORY_FILE           ".kh_history"
 #else
     #define HISTORY_FILE           ".taos_history"
 #endif

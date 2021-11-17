@@ -47,6 +47,14 @@ void osInit() {
   strcpy(tsDataDir, "C:/ProDB/data");
   strcpy(tsLogDir, "C:/ProDB/log");
   strcpy(tsScriptDir, "C:/ProDB/script");
+#elif (_TD_KH_ == true)
+  if (configDir[0] == 0) {
+    strcpy(configDir, "C:/KingHistorian/cfg");
+  }
+  strcpy(tsVnodeDir, "C:/KingHistorian/data");
+  strcpy(tsDataDir, "C:/KingHistorian/data");
+  strcpy(tsLogDir, "C:/KingHistorian/log");
+  strcpy(tsScriptDir, "C:/KingHistorian/script");
 #else
   if (configDir[0] == 0) {
     strcpy(configDir, "C:/TDengine/cfg");

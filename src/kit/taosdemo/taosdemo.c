@@ -633,6 +633,8 @@ SArguments g_args = {
     "tqueue",       // password
 #elif (_TD_PRO_ == true)
     "prodb",       // password
+#elif (_TD_KH_ == true)
+    "khroot",       // password
 #else
     "taosdata",     // password
 #endif
@@ -781,6 +783,11 @@ static void printHelp() {
             "The password to use when connecting to the server. By default is 'prodb'");
     printf("%s%s%s%s\n", indent, "-c, --config-dir=CONFIG_DIR", "\t",
             "Configuration directory. By default is '/etc/ProDB/'.");
+#elif (_TD_KH_ == true)
+    printf("%s%s%s%s\n", indent, "-p, --password", "\t\t",
+            "The password to use when connecting to the server. By default is 'khroot'");
+    printf("%s%s%s%s\n", indent, "-c, --config-dir=CONFIG_DIR", "\t",
+            "Configuration directory. By default is '/etc/kinghistorian/'.");
 #else
     printf("%s%s%s%s\n", indent, "-p, --password", "\t\t",
             "The password to use when connecting to the server.");
